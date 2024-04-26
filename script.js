@@ -14,7 +14,7 @@ currencyButtons1.forEach(function (button) {
       btn.classList.remove("selected");
     });
     button.classList.add("selected");
-    updateExchangeRate2();
+    updateExchangeRate();
   });
 });
 
@@ -24,69 +24,36 @@ currencyButtons2.forEach(function (button) {
       btn.classList.remove("selected");
     });
     button.classList.add("selected");
-    updateExchangeRate();
+    updateConvertedAmount(
+      "amount-one",
+      "amount-two",
+      ".currency-first button.selected",
+      ".currency-second button.selected",
+      ".rate2"
+    );
   });
 });
 
 document.getElementById("amount-one").addEventListener("input", function () {
-  document.getElementById("amount-one").addEventListener("keyup", (event) => {
-    if (
-      event.target.value.split("")[0] == "." ||
-      event.target.value.split("")[0] == "-"
-    ) {
-      let arr = event.target.value.split("");
-      arr.shift();
-      event.target.value = Number(arr.join(""));
-      updateConvertedAmount(
-        Number(
-          event.target.value,
-          "amount-two",
-          ".currency-second button.selected",
-          ".currency-first button.selected",
-          ".rate"
-        )
-      );
-    } else {
-      updateConvertedAmount(
-        "amount-one",
-        "amount-two",
-        ".currency-second button.selected",
-        ".currency-first button.selected",
-        ".rate"
-      );
-    }
-  });
+  updateConvertedAmount(
+    "amount-one",
+    "amount-two",
+    ".currency-first button.selected",
+    ".currency-second button.selected",
+    ".rate2"
+  );
 });
 
 document.getElementById("amount-two").addEventListener("input", function () {
-  document.getElementById("amount-two").addEventListener("keyup", (event) => {
-    if (
-      event.target.value.split("")[0] == "." ||
-      event.target.value.split("")[0] == "-"
-    ) {
-      let arr = event.target.value.split("");
-      arr.shift();
-      event.target.value = Number(arr.join(""));
-      updateConvertedAmount(
-        Number(
-          event.target.value,
-          "amount-one",
-          ".currency-first button.selected",
-          ".currency-second button.selected",
-          ".rate2"
-        )
-      );
-    } else {
-      updateConvertedAmount(
-        "amount-two",
-        "amount-one",
-        ".currency-first button.selected",
-        ".currency-second button.selected",
-        ".rate2"
-      );
-    }
-  });
+  updateConvertedAmount(
+    "amount-two",
+    "amount-one",
+    ".currency-second button.selected",
+    ".currency-first button.selected",
+    ".rate"
+  );
 });
+
 updateExchangeRate();
 
 function updateExchangeRate() {
@@ -101,13 +68,19 @@ function updateExchangeRate() {
   let apiUrl = `https://open.er-api.com/v6/latest/${fromCurrency}?apikey=${apiKey}`;
 
   fetch(apiUrl)
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
     .then((data) => {
       let exchangeRate = data.rates[toCurrency];
       let rateElement = document.querySelector(".rate");
       let rateElement2 = document.querySelector(".rate2");
       rateElement2.textContent = `1 ${toCurrency} = ${exchangeRate} ${fromCurrency}`;
       rateElement.textContent = `1 ${fromCurrency} = ${exchangeRate} ${toCurrency}`;
+
       updateConvertedAmount(
         "amount-one",
         "amount-two",
@@ -115,15 +88,12 @@ function updateExchangeRate() {
         ".currency-second button.selected",
         ".rate2"
       );
-      updateConvertedAmount(
-        "amount-one",
-        "amount-two",
-        ".currency-second button.selected",
-        ".currency-first button.selected",
-        ".rate"
-      );
     })
-    .catch((error) => console.error("Error fetching exchange rates:", error));
+    .catch((error) => {
+      console.error("Error fetching exchange rates:", error);
+      document.querySelector(".error-message").textContent =
+        "Something went wrong. Please check your internet connection and try again.";
+    });
 }
 
 function updateConvertedAmount(
@@ -134,80 +104,8 @@ function updateConvertedAmount(
   rateElementSelector
 ) {
   let amountFrom = document.getElementById(fromInputId).value;
-  let toCurrency = document.querySelector(fromCurrencySelector).textContent;
-  let fromCurrency = document.querySelector(toCurrencySelector).textContent;
-
-  let apiKey = "dea2e6123933d630b4b61bee";
-  let apiUrl = `https://open.er-api.com/v6/latest/${fromCurrency}?apikey=${apiKey}`;
-
-  fetch(apiUrl)
-    .then((response) => response.json())
-    .then((data) => {
-      let exchangeRate = data.rates[toCurrency];
-      let convertedAmount = (isNaN(amountFrom) ? 0 : amountFrom) * exchangeRate;
-      let toInputElement = document.getElementById(toInputId);
-      toInputElement.value = convertedAmount.toFixed(4);
-
-      if (toInputElement.value == 0.0) {
-        toInputElement.value = "";
-      }
-
-      document.querySelector(
-        rateElementSelector
-      ).textContent = `1 ${fromCurrency} = ${exchangeRate.toFixed(
-        4
-      )} ${toCurrency}`;
-    })
-    .catch((error) => console.error("Error fetching exchange rates:", error));
-}
-
-function updateExchangeRate2() {
-  let fromCurrency = document.querySelector(
-    ".currency-second button.selected"
-  ).textContent;
-  let toCurrency = document.querySelector(
-    ".currency-first button.selected"
-  ).textContent;
-
-  let apiKey = "dea2e6123933d630b4b61bee";
-  let apiUrl = `https://open.er-api.com/v6/latest/${fromCurrency}?apikey=${apiKey}`;
-
-  fetch(apiUrl)
-    .then((response) => response.json())
-    .then((data) => {
-      let exchangeRate = data.rates[toCurrency];
-      let rateElement = document.querySelector(".rate");
-      let rateElement2 = document.querySelector(".rate2");
-      rateElement2.textContent = `1 ${toCurrency} = ${exchangeRate} ${fromCurrency}`;
-      rateElement.textContent = `1 ${fromCurrency} = ${exchangeRate} ${toCurrency}`;
-      updateConvertedAmount2(
-        "amount-two",
-        "amount-one",
-        ".currency-first button.selected",
-        ".currency-second button.selected",
-        ".rate"
-      );
-      updateConvertedAmount2(
-        "amount-two",
-        "amount-one",
-        ".currency-second button.selected",
-        ".currency-first button.selected",
-        ".rate2"
-      );
-    })
-    .catch((error) => console.error("Error fetching exchange rates:", error));
-}
-
-function updateConvertedAmount2(
-  fromInputId,
-  toInputId,
-  fromCurrencySelector,
-  toCurrencySelector,
-  rateElementSelector
-) {
-  let amountFrom = document.getElementById(fromInputId).value;
-  let fromCurrency = document.querySelector(fromCurrencySelector).textContent;
   let toCurrency = document.querySelector(toCurrencySelector).textContent;
+  let fromCurrency = document.querySelector(fromCurrencySelector).textContent;
 
   let apiKey = "dea2e6123933d630b4b61bee";
   let apiUrl = `https://open.er-api.com/v6/latest/${fromCurrency}?apikey=${apiKey}`;
@@ -218,17 +116,17 @@ function updateConvertedAmount2(
       let exchangeRate = data.rates[toCurrency];
       let convertedAmount = (isNaN(amountFrom) ? 0 : amountFrom) * exchangeRate;
       let toInputElement = document.getElementById(toInputId);
-
       toInputElement.value = convertedAmount.toFixed(4);
+
       if (toInputElement.value == 0.0) {
         toInputElement.value = "";
       }
+
       document.querySelector(
         rateElementSelector
       ).textContent = `1 ${fromCurrency} = ${exchangeRate.toFixed(
         4
       )} ${toCurrency}`;
     })
-
     .catch((error) => console.error("Error fetching exchange rates:", error));
 }
